@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Logback配置文件：定义日志输出格式、级别和目标 -->
+
+<configuration>
+    <!-- 控制台Appender：将日志输出到控制台 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- 定义日志输出格式 -->
+        <encoder>
+            <!-- 日志格式：时间 [线程] 日志级别 类名 - 日志消息 换行 -->
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 根日志记录器：设置全局日志级别 -->
+    <root level="DEBUG">
+        <!-- 引用控制台Appender -->
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>
