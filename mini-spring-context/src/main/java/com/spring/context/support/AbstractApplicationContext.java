@@ -238,4 +238,24 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
         return getBeanFactory().containsLocalBean(name);
     }
 
+    @Override
+    public Object getBean(String name) {
+        return getBeanFactory().getBean(name);
+    }
+
+    @Override
+    public <T> T getBean(Class<T> requiredType) {
+        return getBeanFactory().getBean(requiredType);
+    }
+
+    @Override
+    public boolean containsBean(String name) {
+        return getBeanFactory().containsBean(name);
+    }
+
+    @Override
+    public void publishEvent(Object event) {
+
+    }
+
 }
