@@ -1,5 +1,12 @@
 package com.spring.context.support;
 
+import com.spring.beans.factory.BeanFactory;
+import com.spring.beans.factory.config.ConfigurableListableBeanFactory;
+import com.spring.context.ApplicationContextAware;
+import com.spring.context.ApplicationEventPublisher;
+import com.spring.context.ApplicationEventPublisherAware;
+import com.spring.context.EnvironmentAware;
+import com.spring.context.weaving.ApplicationContext;
 import com.spring.context.weaving.ConfigurableApplicationContext;
 import com.spring.core.env.ConfigurableEnvironment;
 import com.spring.core.env.StandardEnvironment;
@@ -16,6 +23,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class AbstractApplicationContext implements ConfigurableApplicationContext {
+    /** 环境对象（懒加载） */
+    private ConfigurableEnvironment environment;
+
     /** 此上下文启动时的系统时间（以毫秒为单位） */
     private long startupDate;
 
@@ -24,10 +34,6 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
 
     /** 指示此上下文是否已关闭的标志 */
     private boolean closed = false;
-
-    /** 环境对象（懒加载） */
-    private ConfigurableEnvironment environment;
-
 
     @Override
     public void refresh() {
@@ -39,10 +45,10 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
         prepareRefresh();
 
         // 2. 获取BeanFactory（核心：就是之前创建的DefaultListableBeanFactory）
-//        ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+        ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
         // 3. 准备BeanFactory（核心：设置类加载器、添加后置处理器、添加忽略的接口等）
-//        prepareBeanFactory(beanFactory);
+        prepareBeanFactory(beanFactory);
 
         // 4. 后置处理BeanFactory（空方法，留给子类扩展）
 //        postProcessBeanFactory(beanFactory);
@@ -135,6 +141,101 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
      */
     public void setEnvironment(ConfigurableEnvironment environment) {
         this.environment = environment;
+    }
+
+    /**
+     * 获取新的 BeanFactory（模板方法）
+     * Spring 设计思想：
+     * 1. 确保 BeanFactory 只刷新一次
+     * 2. 返回可配置的 BeanFactory 实例
+     * 3. 为后续的 BeanFactory 配置做准备
+     */
+    protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+        // 防止重复刷新 和 设置序列化ID
+        refreshBeanFactory();
+        return getBeanFactory();	// 返回BeanFactory实例
+    }
+
+    /**
+     * 刷新BeanFactory - 模板方法，由子类实现具体的刷新逻辑
+     * 作用：准备或重置BeanFactory的状态，确保其处于可用的刷新状态
+     */
+    protected abstract void refreshBeanFactory();
+
+    /**
+     * 获取BeanFactory实例 - 模板方法，由子类返回具体的BeanFactory
+     * 作用：返回当前活动的、已刷新的BeanFactory实例
+     */
+    @Override
+    public abstract ConfigurableListableBeanFactory getBeanFactory();
+
+    /**
+     * 准备BeanFactory - 配置BeanFactory的基础设施
+     * 作用：为BeanFactory设置各种解析器、处理器，注册特殊Bean等
+     */
+    protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+        log.info("开始准备BeanFactory");
+
+        // 1. 设置类加载器
+        beanFactory.setBeanClassLoader(getClassLoader());
+        log.debug("设置BeanFactory类加载器: {}", getClassLoader());
+
+        // 2. 添加ApplicationContextAware处理器（核心）
+        beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+        log.debug("添加ApplicationContextAware处理器");
+
+        // 3. 设置忽略的依赖接口（这些接口由容器自动注入，不通过自动装配）
+        // 作用：标记这些接口不由自动装配处理，而是由容器特殊处理
+        beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
+        beanFactory.ignoreDependencyInterface(ApplicationEventPublisherAware.class);
+        beanFactory.ignoreDependencyInterface(ApplicationContextAware.class);
+        log.debug("设置忽略的依赖接口: EnvironmentAware, ResourceLoaderAware, ApplicationEventPublisherAware, ApplicationContextAware");
+
+        // 4. 注册可解析的依赖（这些依赖可以直接从BeanFactory获取）
+        // 作用：注册一些特殊类型的依赖，当Bean需要这些类型时直接从容器获取
+        beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
+        beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
+        beanFactory.registerResolvableDependency(ApplicationContext.class, this);
+        log.debug("注册可解析的依赖: BeanFactory, ResourceLoader, ApplicationEventPublisher, ApplicationContext");
+
+        // 5. 注册环境相关的单例Bean
+        // 注册环境Bean
+        if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
+            beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
+            log.debug("注册环境单例Bean: {}", ENVIRONMENT_BEAN_NAME);
+        }
+
+        // 注册系统属性Bean
+//        if (!beanFactory.containsLocalBean(SYSTEM_PROPERTIES_BEAN_NAME)) {
+//            beanFactory.registerSingleton(SYSTEM_PROPERTIES_BEAN_NAME,
+//                    getEnvironment().getSystemProperties());
+//            log.debug("注册系统属性单例Bean: {}", SYSTEM_PROPERTIES_BEAN_NAME);
+//        }
+
+        // 注册系统环境变量Bean
+//        if (!beanFactory.containsLocalBean(SYSTEM_ENVIRONMENT_BEAN_NAME)) {
+//            beanFactory.registerSingleton(SYSTEM_ENVIRONMENT_BEAN_NAME,
+//                    getEnvironment().getSystemEnvironment());
+//            log.debug("注册系统环境变量单例Bean: {}", SYSTEM_ENVIRONMENT_BEAN_NAME);
+//        }
+
+        log.info("BeanFactory准备完成");
+    }
+
+    /**
+     * 获取类加载器
+     */
+    protected ClassLoader getClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = this.getClass().getClassLoader();
+        }
+        return classLoader;
+    }
+
+    @Override
+    public boolean containsLocalBean(String name) {
+        return getBeanFactory().containsLocalBean(name);
     }
 
 }

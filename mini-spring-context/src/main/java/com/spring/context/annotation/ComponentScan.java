@@ -10,8 +10,8 @@ import java.lang.annotation.*;
  * @Create: 2025/10/25 - 1:09
  * @version: v1.0
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
 @Documented
 public @interface ComponentScan {
     String[] basePackages() default {};
