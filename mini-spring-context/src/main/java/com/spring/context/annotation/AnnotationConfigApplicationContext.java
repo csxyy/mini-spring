@@ -12,7 +12,7 @@ import java.util.Arrays;
  * @Create: 2025/10/24 - 23:29
  * @version: v1.0
  */
-public class AnnotationConfigApplicationContext extends GenericApplicationContext {
+public class AnnotationConfigApplicationContext extends GenericApplicationContext implements AnnotationConfigRegistry {
 
     private final AnnotatedBeanDefinitionReader reader;
 
@@ -30,11 +30,18 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
         refresh();
     }
 
+    @Override
     public void register(Class<?>... componentClasses) {
 
         // 利用AnnotatedBeanDefinitionReader将componentClass注册为BeanDefinition
         // 这是直接将componentClasses注册到Spring容器中，不涉及扫描，refresh时才会扫描
         this.reader.register(componentClasses);
+    }
+
+    @Override
+    public void scan(String... basePackages) {
+
+        this.scanner.scan(basePackages);
     }
 
 }

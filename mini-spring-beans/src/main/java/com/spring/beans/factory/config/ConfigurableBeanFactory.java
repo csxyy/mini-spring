@@ -30,4 +30,11 @@ public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, Single
      * @param beanPostProcessor 后置处理器
      */
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
+
+    /**
+     * 判断是否为FactoryBean
+     * @param name
+     * @return
+     */
+    boolean isFactoryBean(String name);
 }

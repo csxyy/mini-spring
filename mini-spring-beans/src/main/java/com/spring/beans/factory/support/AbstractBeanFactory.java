@@ -5,6 +5,8 @@ import com.spring.context.support.BeanPostProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -28,7 +30,18 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
     @Override
     public Object getBean(String name) {
-//        return doGetBean(name, null, null, false);
+        return doGetBean(name, null, null, false);
+    }
+
+    @Override
+    public <T> T getBean(String name, Class<T> requiredType) {
+        return doGetBean(name, requiredType, null, false);
+    }
+
+    protected <T> T doGetBean(
+            String name, Class<T> requiredType, Object[] args, boolean typeCheckOnly) {
+
+
         return null;
     }
 
@@ -37,4 +50,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
         // TODO
         return true;
     }
+
+    @Override
+    public boolean isFactoryBean(String name) {
+        // TODO
+        return false;
+    }
+
 }

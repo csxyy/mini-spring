@@ -17,6 +17,8 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private Boolean lazyInit = false;   // 懒加载
 
+    private boolean abstractFlag = false;   // 非抽象
+
     @Override
     public Class<?> getBeanClass() {
         return beanClass;
@@ -55,5 +57,10 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
     @Override
     public boolean isPrototype() {
         return SCOPE_PROTOTYPE.equals(scope);
+    }
+
+    @Override
+    public boolean isAbstract() {
+        return this.abstractFlag;
     }
 }

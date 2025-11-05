@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -123,12 +124,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 
     // ============ ListableBeanFactory 接口实现 ============
-    @Override
-    public Object getBean(String name) {
-        // 后续实现具体的Bean创建逻辑
-        log.debug("获取Bean: {}", name);
-        return null;
-    }
 
     @Override
     public <T> T getBean(Class<T> requiredType) {
@@ -154,6 +149,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public ClassLoader getBeanClassLoader() {
         return this.beanClassLoader;
     }
+
 
     // ============ ConfigurableListableBeanFactory 接口实现 ============
 
@@ -183,6 +179,55 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public void registerResolvableDependency(Class<?> dependencyType, Object autowiredValue) {
         this.resolvableDependencies.put(dependencyType, autowiredValue);
         log.debug("注册可解析依赖: {} -> {}", dependencyType.getSimpleName(), autowiredValue.getClass().getSimpleName());
+    }
+
+    @Override
+    public void preInstantiateSingletons() {
+        // 1.创建Bean名称副本
+        List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
+
+        // 2.遍历所有Bean定义
+        for (String beanName : beanNames) {
+            BeanDefinition mbd = getBeanDefinition(beanName);
+
+            // 检查条件
+            if (!mbd.isAbstract() && mbd.isSingleton()) {
+                preInstantiateSingleton(beanName, mbd);
+            }
+        }
+
+        // 3.执行回调（可选）
+/*        for (String beanName : beanNames) {
+            Object bean = getSingleton(beanName);
+            if (bean instanceof SmartInitializingSingleton) {
+                ((SmartInitializingSingleton) bean).afterSingletonsInstantiated();
+            }
+        }*/
+    }
+
+    private void preInstantiateSingleton(String beanName, BeanDefinition mbd) {
+        // 占时：只实现同步创建
+        if (!mbd.isLazyInit()) {
+            // 同步创建Bean
+            instantiateSingleton(beanName);
+        }
+    }
+
+    private void instantiateSingleton(String beanName) {
+        // 根据beanName判断是不是FactoryBean，会根据beanName找到BeanDefinition，从而找到对应类型，从而进行判断
+        if (isFactoryBean(beanName)) {
+            // 创建FactoryBean本身，先创建MyFactoryBean对象
+            Object bean = getBean("&" + beanName);
+
+            // 创建FactoryBean中getObject()方法返回的Bean
+//            if (bean instanceof SmartFactoryBean<?> smartFactoryBean && smartFactoryBean.isEagerInit()) {
+//                // 调用MyFactoryBean对象的getObject()
+//                getBean(beanName);
+//            }
+        }
+        else {
+            getBean(beanName);
+        }
     }
 
     // ============ 配置方法 ============

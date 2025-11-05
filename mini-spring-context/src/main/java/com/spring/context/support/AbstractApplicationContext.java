@@ -10,6 +10,10 @@ import com.spring.context.weaving.ApplicationContext;
 import com.spring.context.weaving.ConfigurableApplicationContext;
 import com.spring.core.env.ConfigurableEnvironment;
 import com.spring.core.env.StandardEnvironment;
+import com.spring.core.io.DefaultResourceLoader;
+import com.spring.core.io.Resource;
+import com.spring.core.io.support.PathMatchingResourcePatternResolver;
+import com.spring.core.io.support.ResourcePatternResolver;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * @version: v1.0
  */
 @Slf4j
-public abstract class AbstractApplicationContext implements ConfigurableApplicationContext {
+public abstract class AbstractApplicationContext extends DefaultResourceLoader implements ConfigurableApplicationContext {
     /** 环境对象（懒加载） */
     private ConfigurableEnvironment environment;
 
@@ -34,6 +38,12 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
 
     /** 指示此上下文是否已关闭的标志 */
     private boolean closed = false;
+
+    private final ResourcePatternResolver resourcePatternResolver;
+
+    public AbstractApplicationContext() {
+        this.resourcePatternResolver = new PathMatchingResourcePatternResolver(this);
+    }
 
     @Override
     public void refresh() {
@@ -51,7 +61,7 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
         prepareBeanFactory(beanFactory);
 
         // 4. 后置处理BeanFactory（空方法，留给子类扩展）
-//        postProcessBeanFactory(beanFactory);
+        postProcessBeanFactory(beanFactory);
 
         // 5. ⭐调用BeanFactory后置处理器（最核心：配置类解析在这里）
 //        invokeBeanFactoryPostProcessors(beanFactory);
@@ -66,13 +76,13 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
 //        initApplicationEventMulticaster();
 
         // 9. 模板方法，子类可以初始化特殊Bean（空实现，保持结构）
-//        onRefresh();
+        onRefresh();
 
         // 10. 注册监听器（可忽略）
 //        registerListeners();
 
         // 11. ⭐完成BeanFactory初始化（核心：实例化所有单例Bean）
-//        finishBeanFactoryInitialization(beanFactory);
+        finishBeanFactoryInitialization(beanFactory);
 
         // 12. 完成刷新，发布上下文刷新事件（简化：只发布事件）
 //        finishRefresh();
@@ -223,14 +233,29 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     }
 
     /**
-     * 获取类加载器
+     * 后置处理BeanFactory - 模板方法
+     * @param beanFactory
      */
-    protected ClassLoader getClassLoader() {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        if (classLoader == null) {
-            classLoader = this.getClass().getClassLoader();
-        }
-        return classLoader;
+    protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+
+    }
+
+    protected void onRefresh() {
+        // 对于子类：默认情况下不执行任何作。
+    }
+
+    /**
+     * 核心：实例化所有单例Bean
+     */
+    protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
+        // 1. 设置必要的服务
+//        setupEssentialServices(beanFactory);
+
+        // 2. 冻结配置
+        beanFactory.freezeConfiguration();
+
+        // 3. 实例化单例Bean
+        beanFactory.preInstantiateSingletons();
     }
 
     @Override
@@ -258,4 +283,27 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
 
     }
 
+
+    // ===================== Lifecycle：生命周期管理 =========================
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+    }
+
+    @Override
+    public boolean isRunning() {
+        return true;
+    }
+
+
+    // ===================== ResourcePatternResolver：扩展资源加载 =========================
+
+    @Override
+    public Resource[] getResources(String locationPattern) {
+        return this.resourcePatternResolver.getResources(locationPattern);
+    }
 }

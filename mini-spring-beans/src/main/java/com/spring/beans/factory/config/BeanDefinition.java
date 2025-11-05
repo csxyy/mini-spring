@@ -25,4 +25,6 @@ public interface BeanDefinition {
     boolean isSingleton();
     boolean isPrototype();
 
+    boolean isAbstract();   // 非抽象的
+
 }

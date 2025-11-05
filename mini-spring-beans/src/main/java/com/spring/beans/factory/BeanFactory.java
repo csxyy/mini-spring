@@ -23,6 +23,8 @@ public interface BeanFactory {
      */
     <T> T getBean(Class<T> requiredType);
 
+    <T> T getBean(String name, Class<T> requiredType);
+
     /**
      * 检查是否包含指定名称的Bean
      * @param name Bean名称

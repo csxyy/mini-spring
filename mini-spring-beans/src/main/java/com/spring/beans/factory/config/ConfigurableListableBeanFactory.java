@@ -45,4 +45,9 @@ public interface ConfigurableListableBeanFactory
      * @param autowiredValue
      */
     void registerResolvableDependency(Class<?> dependencyType, Object autowiredValue);
+
+    /**
+     * 实例化非懒加载的单例Bean
+     */
+    void preInstantiateSingletons();
 }

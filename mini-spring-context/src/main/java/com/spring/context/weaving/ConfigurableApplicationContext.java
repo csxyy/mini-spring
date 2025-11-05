@@ -1,6 +1,7 @@
 package com.spring.context.weaving;
 
 import com.spring.beans.factory.config.ConfigurableListableBeanFactory;
+import com.spring.context.Lifecycle;
 import com.spring.core.env.ConfigurableEnvironment;
 
 /**
@@ -11,7 +12,7 @@ import com.spring.core.env.ConfigurableEnvironment;
  * @Create: 2025/10/25 - 15:26
  * @version: v1.0
  */
-public interface ConfigurableApplicationContext extends ApplicationContext {
+public interface ConfigurableApplicationContext extends ApplicationContext, Lifecycle {
 
     // 常量定义
     String ENVIRONMENT_BEAN_NAME = "environment";
