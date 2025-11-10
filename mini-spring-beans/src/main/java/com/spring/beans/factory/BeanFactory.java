@@ -9,6 +9,9 @@ package com.spring.beans.factory;
  * @version: v1.0
  */
 public interface BeanFactory {
+
+    String FACTORY_BEAN_PREFIX = "&";
+
     /**
      * 根据名称获取Bean实例
      * @param name Bean名称

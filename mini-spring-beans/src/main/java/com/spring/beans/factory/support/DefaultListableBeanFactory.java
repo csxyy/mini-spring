@@ -25,9 +25,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
     private final List<String> beanDefinitionNames = new ArrayList<>();
 
-    /** 单例池 */
-    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256); // 单例Bean缓存
-
     /** 在依赖项检查和自动连接时要忽略的依赖类型 */
     private final Set<Class<?>> ignoredDependencyInterfaces = new HashSet<>();
 
@@ -125,6 +122,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     // ============ ListableBeanFactory 接口实现 ============
 
+    /**
+     * 根据类型获取Bean
+     * @param requiredType Bean类型
+     * @return
+     * @param <T>
+     */
     @Override
     public <T> T getBean(Class<T> requiredType) {
         // 后续实现按类型获取Bean的逻辑
@@ -217,7 +220,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         // 根据beanName判断是不是FactoryBean，会根据beanName找到BeanDefinition，从而找到对应类型，从而进行判断
         if (isFactoryBean(beanName)) {
             // 创建FactoryBean本身，先创建MyFactoryBean对象
-            Object bean = getBean("&" + beanName);
+            Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 
             // 创建FactoryBean中getObject()方法返回的Bean
 //            if (bean instanceof SmartFactoryBean<?> smartFactoryBean && smartFactoryBean.isEagerInit()) {
@@ -240,16 +243,4 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         return this.allowBeanDefinitionOverriding;
     }
 
-    @Override
-    public boolean containsLocalBean(String name) {
-        // 简化实现：检查单例缓存和Bean定义
-        return this.singletonObjects.containsKey(name) || this.beanDefinitionMap.containsKey(name);
-    }
-
-    @Override
-    public void registerSingleton(String beanName, Object singletonObject) {
-        // 简化实现：直接放入单例缓存
-        this.singletonObjects.put(beanName, singletonObject);
-        log.debug("注册单例Bean: {} -> {}", beanName, singletonObject.getClass().getSimpleName());
-    }
 }
