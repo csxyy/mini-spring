@@ -21,4 +21,14 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
         setScope(scope);
         setLazyInit(lazyInit);
     }
+
+    /**
+     * 检查验证RootBeanDefinition是否有效
+     */
+    public void validate() {
+        // 简化验证逻辑
+        if (getBeanClass() == null) {
+            throw new IllegalArgumentException("Bean 类不得为 null");
+        }
+    }
 }
