@@ -1,8 +1,7 @@
 package com.spring.beans.factory.config;
 
-import com.spring.beans.factory.BeanFactory;
 import com.spring.beans.factory.HierarchicalBeanFactory;
-import com.spring.context.support.BeanPostProcessor;
+import com.spring.beans.factory.support.BeanPostProcessor;
 
 /**
  * ClassName: ConfigurableBeanFactory

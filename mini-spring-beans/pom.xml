@@ -21,7 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>com.spring</groupId>
-            <artifactId>mini-spring-context</artifactId>
+            <artifactId>mini-spring-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

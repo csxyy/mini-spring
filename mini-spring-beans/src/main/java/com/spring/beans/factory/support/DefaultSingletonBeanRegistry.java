@@ -21,8 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
 
-    private static final Object NULL_OBJECT = new Object();
-
     /** 一级缓存：完整的单例Bean */
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
@@ -71,12 +69,37 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
             }
         }
 
-        // 处理NULL对象占位符
-        if (singletonObject == NULL_OBJECT) {
-            return null;
+        return singletonObject;
+    }
+
+    /**
+     * 返回以给定名称注册的（原始）单例对象，如果尚未注册，则创建并注册一个新对象。
+     * @param beanName
+     * @param singletonFactory
+     * @return
+     */
+    public Object getSingleton(String beanName, ObjectFactory<?> singletonFactory) {
+        // 1. 从缓存获取
+        Object singletonObject = this.singletonObjects.get(beanName);
+        if (singletonObject != null) {
+            return singletonObject;
         }
 
-        return singletonObject;
+        // 2. 标记开始创建
+        beforeSingletonCreation(beanName);
+
+        try {
+            // 3. 创建Bean
+            singletonObject = singletonFactory.getObject();
+
+            // 4. 添加到缓存
+            addSingleton(beanName, singletonObject);
+
+            return singletonObject;
+        } finally {
+            // 5. 标记创建完成
+            afterSingletonCreation(beanName);
+        }
     }
 
     /**
@@ -106,7 +129,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
      */
     protected void addSingleton(String beanName, Object singletonObject) {
         synchronized (this.singletonObjects) {
-            this.singletonObjects.put(beanName, (singletonObject != null ? singletonObject : NULL_OBJECT));
+            this.singletonObjects.put(beanName, singletonObject);
             this.singletonFactories.remove(beanName);
             this.earlySingletonObjects.remove(beanName);
             log.debug("注册完整单例Bean到一级缓存: {}", beanName);

@@ -1,9 +1,9 @@
 package com.spring.context.support;
 
+import com.spring.beans.factory.support.BeanPostProcessor;
 import com.spring.context.ApplicationContextAware;
 import com.spring.context.ApplicationEventPublisherAware;
 import com.spring.context.EnvironmentAware;
-import com.spring.context.weaving.ApplicationContext;
 import com.spring.context.weaving.ConfigurableApplicationContext;
 import lombok.AllArgsConstructor;
 

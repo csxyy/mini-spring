@@ -5,7 +5,6 @@ import com.spring.beans.factory.BeanFactoryUtils;
 import com.spring.beans.factory.FactoryBean;
 import com.spring.beans.factory.config.BeanDefinition;
 import com.spring.beans.factory.config.ConfigurableBeanFactory;
-import com.spring.context.support.BeanPostProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -40,7 +39,6 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
     public Object getBean(String name) {
         return doGetBean(name, null, null, false);
     }
-
 
 
     @Override
@@ -78,13 +76,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
 //        }
 
         // 5. 根据作用域创建Bean
-//        if (mbd.isSingleton()) {
-//            log.debug("创建单例Bean: {}", beanName);
-//            bean = getSingleton(beanName, () -> createBean(beanName, mbd));
-//        } else {
-//            log.debug("创建原型Bean: {}", beanName);
-//            bean = createBean(beanName, mbd);
-//        }
+        if (mbd.isSingleton()) {
+            log.debug("创建单例Bean: {}", beanName);
+            bean = getSingleton(beanName, () -> createBean(beanName, mbd, args));
+        } else {
+            log.debug("创建原型Bean: {}", beanName);
+            bean = createBean(beanName, mbd, args);
+        }
 
         // 6. 处理FactoryBean
 //        bean = getObjectForBeanInstance(bean, name, beanName);
@@ -215,6 +213,20 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
 
         // 如果不是RootBeanDefinition，包装一下（几乎不会走到这里）
         return new RootBeanDefinition(bd.getBeanClass());
+    }
+
+    /**
+     * 创建Bean实例
+     */
+    protected abstract Object createBean(String beanName, RootBeanDefinition mbd, Object[] args);
+
+    /**
+     * 获取Bean的Class实例
+     */
+    protected Class<?> resolveBeanClass(RootBeanDefinition mbd, String beanName, Class<?>... typesToMatch) {
+        // 真实Spring中BeanDefinition里的beanClass类型是Object的，所以会有很多判断逻辑
+        // 而我们的beanClass类型就是Class直接获取即可
+        return mbd.getBeanClass();
     }
 
     @Override
