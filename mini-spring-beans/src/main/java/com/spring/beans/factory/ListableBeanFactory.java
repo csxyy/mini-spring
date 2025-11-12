@@ -27,4 +27,13 @@ public interface ListableBeanFactory extends BeanFactory {
      * @return 是否包含
      */
     boolean containsBeanDefinition(String beanName);
+
+    /**
+     * 获取指定类型的所有Bean名称
+     * @param type 要查找的类型
+     * @param includeNonSingletons 是否包含非单例Bean
+     * @param allowEagerInit 是否允许提前初始化
+     * @return 匹配的Bean名称数组
+     */
+    String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit);
 }

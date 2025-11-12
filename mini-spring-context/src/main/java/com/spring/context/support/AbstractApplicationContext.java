@@ -1,6 +1,7 @@
 package com.spring.context.support;
 
 import com.spring.beans.factory.BeanFactory;
+import com.spring.beans.factory.config.BeanFactoryPostProcessor;
 import com.spring.beans.factory.config.ConfigurableListableBeanFactory;
 import com.spring.context.ApplicationContextAware;
 import com.spring.context.ApplicationEventPublisher;
@@ -16,6 +17,9 @@ import com.spring.core.io.support.PathMatchingResourcePatternResolver;
 import com.spring.core.io.support.ResourcePatternResolver;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ClassName: AbstractApplicationContext
@@ -38,6 +42,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
 
     /** 指示此上下文是否已关闭的标志 */
     private boolean closed = false;
+
+    private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 
     private final ResourcePatternResolver resourcePatternResolver;
 
@@ -64,7 +70,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
         postProcessBeanFactory(beanFactory);
 
         // 5. ⭐调用BeanFactory后置处理器（最核心：配置类解析在这里）
-//        invokeBeanFactoryPostProcessors(beanFactory);
+        invokeBeanFactoryPostProcessors(beanFactory);
 
         // 6. 注册Bean后置处理器（核心：准备Bean增强）
 //        registerBeanPostProcessors(beanFactory);
@@ -240,6 +246,24 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
 
     }
 
+    /**
+     * ⭐调用BeanFactory后置处理器
+     */
+    protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+        // 委托给PostProcessorRegistrationDelegate执行所有BeanFactoryPostProcessor
+        PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
+    }
+
+    @Override
+    public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
+        this.beanFactoryPostProcessors.add(postProcessor);
+    }
+
+    public List<BeanFactoryPostProcessor> getBeanFactoryPostProcessors() {
+        // 获取程序员自己 ioc.addBeanFactoryPostProcessor(xxx); 容器刷新前 （很少这么用）
+        return this.beanFactoryPostProcessors;
+    }
+
     protected void onRefresh() {
         // 对于子类：默认情况下不执行任何作。
     }
@@ -281,6 +305,21 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
     @Override
     public boolean containsBean(String name) {
         return getBeanFactory().containsBean(name);
+    }
+
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+        return getBeanFactory().getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+    }
+
+    @Override
+    public boolean isSingleton(String name) {
+        return getBeanFactory().isSingleton(name);
+    }
+
+    @Override
+    public Class<?> getType(String name) {
+        return getBeanFactory().getType(name);
     }
 
     @Override

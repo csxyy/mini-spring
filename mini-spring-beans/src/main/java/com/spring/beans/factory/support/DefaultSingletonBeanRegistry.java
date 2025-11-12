@@ -4,10 +4,7 @@ import com.spring.beans.factory.ObjectFactory;
 import com.spring.beans.factory.config.SingletonBeanRegistry;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -154,5 +151,31 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
             throw new IllegalStateException("单例Bean '" + beanName + "' 不在创建状态");
         }
         log.debug("完成创建单例Bean: {}", beanName);
+    }
+
+
+    /**
+     * 检查是否包含单例Bean
+     */
+    @Override
+    public boolean containsSingleton(String beanName) {
+        return this.singletonObjects.containsKey(beanName) ||
+                this.earlySingletonObjects.containsKey(beanName);
+    }
+
+    /**
+     * 获取所有单例Bean的名称
+     */
+    @Override
+    public String[] getSingletonNames() {
+        Set<String> singletonNames = new HashSet<>();
+
+        // 添加一级缓存中的单例
+        singletonNames.addAll(this.singletonObjects.keySet());
+
+        // 添加二级缓存中的早期单例
+        singletonNames.addAll(this.earlySingletonObjects.keySet());
+
+        return singletonNames.toArray(new String[0]);
     }
 }

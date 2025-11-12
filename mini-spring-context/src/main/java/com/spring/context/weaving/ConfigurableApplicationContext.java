@@ -1,5 +1,6 @@
 package com.spring.context.weaving;
 
+import com.spring.beans.factory.config.BeanFactoryPostProcessor;
 import com.spring.beans.factory.config.ConfigurableListableBeanFactory;
 import com.spring.context.Lifecycle;
 import com.spring.core.env.ConfigurableEnvironment;
@@ -27,4 +28,6 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
     ConfigurableEnvironment getEnvironment();
 
     ConfigurableListableBeanFactory getBeanFactory();
+
+    void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor);
 }

@@ -34,4 +34,14 @@ public interface BeanFactory {
      * @return 是否包含
      */
     boolean containsBean(String name);
+
+    /**
+     * 检查Bean是否是单例
+     */
+    boolean isSingleton(String name);
+
+    /**
+     * 获取Bean的类型
+     */
+    Class<?> getType(String name);
 }

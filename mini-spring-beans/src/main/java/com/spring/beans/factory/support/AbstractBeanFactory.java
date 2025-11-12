@@ -246,4 +246,60 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
         // 简化实现：检查单例缓存和Bean定义
         return true;
     }
+
+    /**
+     * 检查Bean是否是单例
+     */
+    @Override
+    public boolean isSingleton(String beanName) {
+        BeanDefinition bd = getBeanDefinition(beanName);
+        if (bd != null) {
+            return bd.isSingleton();
+        }
+
+        // 如果是手动注册的单例，也返回true
+        return containsSingleton(beanName);
+    }
+
+    /**
+     * 判断类型是否匹配
+     */
+    protected boolean isTypeMatch(String beanName, Class<?> targetType) {
+        try {
+            Class<?> beanType = getType(beanName);
+            if (beanType == null) {
+                return false;
+            }
+
+            // 检查类型是否匹配（包括父子类、接口实现）
+            return targetType.isAssignableFrom(beanType);
+
+        } catch (Exception e) {
+            log.debug("检查Bean类型匹配失败: {}, {}", beanName, targetType.getSimpleName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 获取Bean的类型
+     */
+    @Override
+    public Class<?> getType(String beanName) {
+        BeanDefinition bd = getBeanDefinition(beanName);
+
+        // 1. 如果BeanDefinition中直接指定了类，直接返回
+        if (bd.getBeanClass() != null) {
+            return bd.getBeanClass();
+        }
+
+        // 2. 如果是工厂Bean，需要特殊处理（简化版先返回null）
+//        if (bd.getFactoryBeanName() != null || bd.getFactoryMethodName() != null) {
+//            // 完整Spring会在这里解析工厂方法的返回类型
+//            log.debug("工厂Bean的类型推断暂未实现: {}", beanName);
+//            return null;
+//        }
+
+        // 3. 如果都没有，返回null
+        return null;
+    }
 }

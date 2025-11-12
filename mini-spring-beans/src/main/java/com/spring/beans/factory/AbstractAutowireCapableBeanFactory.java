@@ -42,7 +42,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             throw new RuntimeException("无法解析Bean类：" + beanClass);
         }
 
-        // 2. 给BeanPostProcessor机会返回代理对象（AOP前置处理）
+        // 2. 给BeanPostProcessor机会返回代理对象
         Object bean = applyBeanPostProcessorsBeforeInstantiation(beanName, mbd);
         if (bean != null) {
             log.debug("BeanPostProcessor返回了代理对象: {}", beanName);

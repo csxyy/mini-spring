@@ -140,6 +140,40 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         return this.beanDefinitionMap.containsKey(name);
     }
 
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+        log.debug("查找类型为 {} 的Bean, includeNonSingletons: {}, allowEagerInit: {}",
+                type.getSimpleName(), includeNonSingletons, allowEagerInit);
+
+        List<String> result = new ArrayList<>();
+
+        // 1. 遍历所有Bean定义名称
+        for (String beanName : getBeanDefinitionNames()) {
+            // 2. 检查是否为单例（如果不包含非单例且当前Bean不是单例，则跳过）
+            if (!includeNonSingletons && !isSingleton(beanName)) {
+                continue;
+            }
+
+            // 3. 检查类型是否匹配
+            if (isTypeMatch(beanName, type)) {
+                result.add(beanName);
+            }
+        }
+
+        // 4. 同时检查手动注册的单例（通过registerSingleton注册的）
+        if (includeNonSingletons) {
+            String[] singletonNames = getSingletonNames();
+            for (String singletonName : singletonNames) {
+                if (!result.contains(singletonName) && isTypeMatch(singletonName, type)) {
+                    result.add(singletonName);
+                }
+            }
+        }
+
+        log.debug("找到 {} 个类型为 {} 的Bean: {}", result.size(), type.getSimpleName(), result);
+        return result.toArray(new String[0]);
+    }
+
     // ============ ConfigurableBeanFactory 接口实现 ============
 
     @Override
