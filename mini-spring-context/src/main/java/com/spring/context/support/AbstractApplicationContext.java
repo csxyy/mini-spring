@@ -282,19 +282,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
         beanFactory.preInstantiateSingletons();
     }
 
+    // ============ HierarchicalBeanFactory 接口实现封装 ============
+
     @Override
     public boolean containsLocalBean(String name) {
         return getBeanFactory().containsLocalBean(name);
     }
 
+    // ============ BeanFactory 接口实现封装 ============
+
     @Override
     public Object getBean(String name) {
         return getBeanFactory().getBean(name);
-    }
-
-    @Override
-    public <T> T getBean(Class<T> requiredType) {
-        return getBeanFactory().getBean(requiredType);
     }
 
     @Override
@@ -303,13 +302,23 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
     }
 
     @Override
-    public boolean containsBean(String name) {
-        return getBeanFactory().containsBean(name);
+    public Object getBean(String name, Object... args) {
+        return getBeanFactory().getBean(name, args);
     }
 
     @Override
-    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
-        return getBeanFactory().getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+    public <T> T getBean(Class<T> requiredType) {
+        return getBeanFactory().getBean(requiredType);
+    }
+
+    @Override
+    public <T> T getBean(Class<T> requiredType, Object... args) {
+        return getBeanFactory().getBean(requiredType, args);
+    }
+
+    @Override
+    public boolean containsBean(String name) {
+        return getBeanFactory().containsBean(name);
     }
 
     @Override
@@ -321,6 +330,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
     public Class<?> getType(String name) {
         return getBeanFactory().getType(name);
     }
+
+    // ============ ListableBeanFactory 接口实现封装 ============
+
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
+        return getBeanFactory().getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+    }
+
+
+    // ============ ApplicationEventPublisher 接口实现 ============
 
     @Override
     public void publishEvent(Object event) {

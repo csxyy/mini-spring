@@ -19,6 +19,10 @@ public interface BeanFactory {
      */
     Object getBean(String name);
 
+    <T> T getBean(String name, Class<T> requiredType);
+
+    Object getBean(String name, Object... args);
+
     /**
      * 根据类型获取Bean实例
      * @param requiredType Bean类型
@@ -26,7 +30,7 @@ public interface BeanFactory {
      */
     <T> T getBean(Class<T> requiredType);
 
-    <T> T getBean(String name, Class<T> requiredType);
+    <T> T getBean(Class<T> requiredType, Object... args);
 
     /**
      * 检查是否包含指定名称的Bean

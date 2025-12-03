@@ -50,4 +50,7 @@ public interface ConfigurableListableBeanFactory
      * 实例化非懒加载的单例Bean
      */
     void preInstantiateSingletons();
+
+    BeanDefinition getBeanDefinition(String beanName);
+
 }

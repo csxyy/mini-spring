@@ -11,8 +11,8 @@
         </encoder>
     </appender>
 
-    <!-- 根日志记录器：设置全局日志级别 -->
-    <root level="DEBUG">
+    <!-- 根日志记录器：设置全局日志级别 DEBUG -->
+    <root level="INFO">
         <!-- 引用控制台Appender -->
         <appender-ref ref="CONSOLE" />
     </root>

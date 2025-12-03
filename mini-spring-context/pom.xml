@@ -23,11 +23,6 @@
             <artifactId>mini-spring-beans</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>com.spring</groupId>
-            <artifactId>mini-spring-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
 </project>

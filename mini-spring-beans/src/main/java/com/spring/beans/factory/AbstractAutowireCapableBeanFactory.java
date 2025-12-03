@@ -37,7 +37,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         log.debug("开始创建Bean: {}", beanName);
 
         // 1. 解析Bean类
-        Class<?> beanClass = mbd.getBeanClass();
+        Class<?> beanClass = resolveBeanClass(mbd);
         if (beanClass == null) {
             throw new RuntimeException("无法解析Bean类：" + beanClass);
         }
@@ -52,6 +52,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         // 3. 实际创建Bean实例
         return doCreateBean(beanName, mbd, args);
     }
+
+
 
     /**
      * Bean实例化前的后置处理（用于AOP等）
@@ -93,7 +95,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, Object[] args) {
         log.debug("创建Bean实例: {}", beanName);
-        Class<?> beanClass = resolveBeanClass(mbd, beanName);
+        Class<?> beanClass = mbd.getBeanClass();
 
         // 1. 工厂方法（反射调用@Bean定义的方法）
 //        if (mbd.getFactoryMethodName() != null) {

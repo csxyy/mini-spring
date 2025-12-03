@@ -12,6 +12,9 @@ import com.spring.core.io.ResourceLoader;
  * @version: v1.0
  */
 public interface ResourcePatternResolver extends ResourceLoader {
+
+    String CLASSPATH_ALL_URL_PREFIX = "classpath*:";
+
     /**
      * 批量获取资源
      * @param locationPattern

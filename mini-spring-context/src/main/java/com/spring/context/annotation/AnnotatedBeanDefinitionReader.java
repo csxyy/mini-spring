@@ -1,5 +1,6 @@
 package com.spring.context.annotation;
 
+import com.spring.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import com.spring.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import com.spring.beans.factory.config.BeanDefinition;
 import com.spring.beans.factory.support.BeanDefinitionRegistry;
@@ -56,7 +57,7 @@ public class AnnotatedBeanDefinitionReader {
     }
     private void doRegisterBean(Class<?> beanClass) {
         // 1. 创建BeanDefinition（简化版）
-        BeanDefinition abd = new RootBeanDefinition(beanClass);
+        AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
 
         // 2. 生成Bean名称（简化版）
         String beanName = generateBeanName(beanClass);

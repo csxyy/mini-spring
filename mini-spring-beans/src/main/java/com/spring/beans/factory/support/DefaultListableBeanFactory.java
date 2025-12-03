@@ -120,7 +120,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     }
 
 
-    // ============ ListableBeanFactory 接口实现 ============
+    // ============ BeanFactory 接口实现 ============
 
     /**
      * 根据类型获取Bean
@@ -132,6 +132,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public <T> T getBean(Class<T> requiredType) {
         // 后续实现按类型获取Bean的逻辑
         log.debug("按类型获取Bean: {}", requiredType.getSimpleName());
+
+        return getBean(requiredType, (Object[]) null);
+    }
+
+    @Override
+    public <T> T getBean(Class<T> requiredType, Object... args) {
+
         return null;
     }
 
@@ -139,6 +146,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public boolean containsBean(String name) {
         return this.beanDefinitionMap.containsKey(name);
     }
+
+
+    // ============ ListableBeanFactory 接口实现 ============
 
     @Override
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
@@ -173,6 +183,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         log.debug("找到 {} 个类型为 {} 的Bean: {}", result.size(), type.getSimpleName(), result);
         return result.toArray(new String[0]);
     }
+
 
     // ============ ConfigurableBeanFactory 接口实现 ============
 

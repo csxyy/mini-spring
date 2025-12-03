@@ -40,10 +40,14 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
         return doGetBean(name, null, null, false);
     }
 
-
     @Override
     public <T> T getBean(String name, Class<T> requiredType) {
         return doGetBean(name, requiredType, null, false);
+    }
+
+    @Override
+    public Object getBean(String name, Object... args) {
+        return doGetBean(name, null, args, false);
     }
 
     protected <T> T doGetBean(
@@ -223,10 +227,16 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
     /**
      * 获取Bean的Class实例
      */
-    protected Class<?> resolveBeanClass(RootBeanDefinition mbd, String beanName, Class<?>... typesToMatch) {
-        // 真实Spring中BeanDefinition里的beanClass类型是Object的，所以会有很多判断逻辑
-        // 而我们的beanClass类型就是Class直接获取即可
-        return mbd.getBeanClass();
+    protected Class<?> resolveBeanClass(RootBeanDefinition mbd) {
+        // 如果BeanDefinition已经有缓存的类，直接返回
+        if (mbd.hasBeanClass()) {
+            return mbd.getBeanClass();
+        }
+
+        // 否则，触发类的加载
+        Class<?> beanClass = mbd.getBeanClass(); // 这里会调用resolveBeanClass()
+        log.debug("加载Bean类: {}", beanClass.getName());
+        return beanClass;
     }
 
     @Override

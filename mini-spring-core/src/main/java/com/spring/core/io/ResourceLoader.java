@@ -9,6 +9,9 @@ package com.spring.core.io;
  * @version: v1.0
  */
 public interface ResourceLoader {
+
+    String CLASSPATH_URL_PREFIX = "classpath:";
+
     /**
      * 获取资源
      * @param location
