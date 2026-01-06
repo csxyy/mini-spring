@@ -83,9 +83,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
         if (mbd.isSingleton()) {
             log.debug("创建单例Bean: {}", beanName);
             bean = getSingleton(beanName, () -> createBean(beanName, mbd, args));
-        } else {
+        } else if (mbd.isPrototype()){
             log.debug("创建原型Bean: {}", beanName);
             bean = createBean(beanName, mbd, args);
+        } else {
+            log.error("没有此作用域: {} 的Bean: {}", mbd.getScope(), beanName);
+            throw new RuntimeException("没有此作用域: " + mbd.getScope() + " 的Bean: " + beanName);
         }
 
         // 6. 处理FactoryBean
@@ -223,21 +226,6 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport
      * 创建Bean实例
      */
     protected abstract Object createBean(String beanName, RootBeanDefinition mbd, Object[] args);
-
-    /**
-     * 获取Bean的Class实例
-     */
-    protected Class<?> resolveBeanClass(RootBeanDefinition mbd) {
-        // 如果BeanDefinition已经有缓存的类，直接返回
-        if (mbd.hasBeanClass()) {
-            return mbd.getBeanClass();
-        }
-
-        // 否则，触发类的加载
-        Class<?> beanClass = mbd.getBeanClass(); // 这里会调用resolveBeanClass()
-        log.debug("加载Bean类: {}", beanClass.getName());
-        return beanClass;
-    }
 
     @Override
     public boolean containsBean(String name) {

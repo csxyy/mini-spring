@@ -16,7 +16,7 @@ import java.util.List;
  */
 @Slf4j
 public class BeanWrapperImpl implements BeanWrapper {
-    private final Object wrappedObject;
+    private Object wrappedObject;
 
     public BeanWrapperImpl(Object object) {
         this.wrappedObject = object;

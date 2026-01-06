@@ -55,11 +55,11 @@ public class ConfigurationClassUtils {
      * Spring原版逻辑：@Configuration, @Component, @ComponentScan, @Import, @ImportResource（xml）
      */
     private static boolean isConfigurationAnnotationPresent(AnnotationMetadata metadata) {
-        return metadata.hasAnnotation(Configuration.class.getName()) ||
+        return metadata.isAnnotated(Configuration.class.getName()) ||
                 // @Component检查主要是为了识别@Configuration(它被@Component标注)
                 metadata.isAnnotated(Component.class.getName()) ||
-                metadata.hasAnnotation(ComponentScan.class.getName()) ||
-                metadata.hasAnnotation(Import.class.getName());
+                metadata.isAnnotated(ComponentScan.class.getName()) ||
+                metadata.isAnnotated(Import.class.getName());
     }
 
     /**
@@ -70,7 +70,7 @@ public class ConfigurationClassUtils {
         // Spring原版逻辑：
         // 如果是@Configuration注解，设置为"full"
         // 如果是其他配置相关注解，设置为"lite"
-        if (metadata.hasAnnotation(Configuration.class.getName())) {
+        if (metadata.isAnnotated(Configuration.class.getName())) {
             log.debug("设置配置类为full模式: {}", metadata.getClassName());
             // beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
         } else {

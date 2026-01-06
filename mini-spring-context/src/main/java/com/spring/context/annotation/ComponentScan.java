@@ -44,7 +44,7 @@ public @interface ComponentScan {
     boolean useDefaultFilters() default true;
 
     /**
-     * 懒加载初始化
+     * 懒加载初始化：设置了，被扫描到的所有组件都是懒加载
      */
     boolean lazyInit() default false;
 }

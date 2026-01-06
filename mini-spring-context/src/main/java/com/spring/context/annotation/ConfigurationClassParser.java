@@ -6,6 +6,8 @@ import com.spring.beans.factory.config.BeanDefinitionHolder;
 import com.spring.beans.factory.support.AbstractBeanDefinition;
 import com.spring.beans.factory.support.BeanDefinitionRegistry;
 import com.spring.core.type.AnnotationMetadata;
+import com.spring.core.type.MethodMetadata;
+import com.spring.core.type.StandardMethodMetadata;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
@@ -15,6 +17,7 @@ import java.util.*;
  * ClassName: ConfigurationClassParser
  * Description: 配置类解析器
  *
+ * 对应源Spring的ComponentScanAnnotationParser
  * 负责解析配置类，处理@Configuration、@ComponentScan、@Import、@Bean等注解
  *
  * Spring设计思想：
@@ -28,11 +31,9 @@ import java.util.*;
 @Slf4j
 public class ConfigurationClassParser {
     private final BeanDefinitionRegistry registry;
-    private final ClassPathBeanDefinitionScanner scanner;
 
     public ConfigurationClassParser(BeanDefinitionRegistry registry) {
         this.registry = registry;
-        this.scanner = new ClassPathBeanDefinitionScanner(registry, false);
     }
 
     /**
@@ -76,15 +77,18 @@ public class ConfigurationClassParser {
         log.debug("处理配置类: {}", abd.getMetadata().getClassName());
 
         // 处理@ComponentScan注解
-        if (abd.getMetadata().hasAnnotation(ComponentScan.class.getName())) {
+        if (abd.getMetadata().isAnnotated(ComponentScan.class.getName())) {
             processComponentScan(configClass);
         }
 
         // TODO: 处理@Import注解
-        // processImports(configClass);
+        processImports(configClass);
 
         // TODO: 处理@Bean方法 - 注意：这里只收集@Bean方法信息，不注册BeanDefinition
-        // processBeanMethods(configClass);
+        Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(abd);
+        for (MethodMetadata methodMetadata : beanMethods) {
+            configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
+        }
 
         // TODO: 处理接口默认方法
         // processInterfaces(configClass);
@@ -116,7 +120,7 @@ public class ConfigurationClassParser {
             log.debug("扫描基础包路径: {}", Arrays.toString(basePackages));
 
             if (basePackages.length > 0) {
-                // Step 3: 排除配置类自身（重要！）
+                // Step 3: 排除配置类自身
                 excludeDeclaringClass(configuredScanner, configClassObj);
 
                 // Step 4: 执行扫描
@@ -136,7 +140,7 @@ public class ConfigurationClassParser {
         log.debug("创建并配置ClassPathBeanDefinitionScanner");
 
         // Step 1: 创建扫描器实例（不使用默认过滤器，因为我们要根据@ComponentScan配置）
-        ClassPathBeanDefinitionScanner configuredScanner = new ClassPathBeanDefinitionScanner(registry, false);
+        ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry, false);
 
         // Step 2: Bean名称生成器 - 在扫描器内部简单实现，不创建复杂生成器
         // 我们的generateBeanName方法已经满足基本需求
@@ -151,13 +155,17 @@ public class ConfigurationClassParser {
         // 这样扫描器可以独立工作，不依赖外部配置
 
         // Step 5-6: 配置包含和排除过滤器 - 核心功能
-        configureIncludeExcludeFilters(configuredScanner, componentScan);
+        configureIncludeExcludeFilters(scanner, componentScan);
 
-        // Step 7: 懒加载配置 - 在扫描器内部实现更合适
-        // 因为懒加载是BeanDefinition的属性，在注册时设置
+        // Step 7: 这里设置了懒加载配置
+        boolean lazyInit = componentScan.lazyInit();
+        if (lazyInit) {
+            log.warn("@ComponentScan开启了懒加载：{} 路径下的扫描到的所有Bean都会变成懒加载", componentScan.value());
+            scanner.getBeanDefinitionDefaults().setLazyInit(true);	// 设置默认懒加载
+        }
 
         log.debug("扫描器配置完成");
-        return configuredScanner;
+        return scanner;
     }
 
     /**
@@ -245,5 +253,112 @@ public class ConfigurationClassParser {
         String defaultPackage = configClass.getPackage().getName();
         log.debug("未显式指定包路径，使用配置类所在包作为默认路径: {}", defaultPackage);
         return new String[]{defaultPackage};
+    }
+
+    /**
+     * 这个方法处理三种类型的导入：
+     *  1. 普通类（包括@Configuration类）
+     *  2. ImportSelector接口实现
+     *  3. ImportBeanDefinitionRegistrar接口实现
+     */
+    private void processImports(ConfigurationClass configClass) {
+
+    }
+
+    /**
+     * 检索@Bean方法元数据 - 对应Spring的retrieveBeanMethodMetadata方法
+     *
+     * 设计思想：
+     * 1. 扫描配置类中所有带有@Bean注解的方法
+     * 2. 收集方法元数据但不立即注册BeanDefinition
+     * 3. 处理继承的方法（包括接口默认方法）
+     * 4. 跳过静态方法（除非有特殊处理）
+     *
+     * @param abd 配置类的BeanDefinition
+     * @return @Bean方法的元数据集合
+     */
+    private Set<MethodMetadata> retrieveBeanMethodMetadata(AnnotatedBeanDefinition abd) {
+        log.debug("检索配置类中的@Bean方法，类: {}", abd.getBeanClassName());
+
+        Set<MethodMetadata> beanMethods = new LinkedHashSet<>();
+
+        try {
+            // 加载配置类
+            Class<?> configClass = abd.getBeanClass();
+            if (configClass == null) {
+                log.warn("无法加载配置类，跳过@Bean方法检索");
+                return beanMethods;
+            }
+
+            // 获取所有方法（包括父类和接口方法）
+            Method[] methods = configClass.getDeclaredMethods();
+            log.debug("扫描类 {} 的方法，共 {} 个", configClass.getName(), methods.length);
+
+            for (Method method : methods) {
+                // 检查是否有@Bean注解
+                if (method.isAnnotationPresent(Bean.class)) {
+                    log.debug("发现@Bean方法: {} -> {}", method.getName(), method.getReturnType().getName());
+
+                    log.debug("为方法 {} 创建元数据", method.getName());
+                    // 创建方法元数据 - 简单实现: 使用反射创建方法元数据（Spring底层用的是asm，但上层都是一样的API）
+                    MethodMetadata methodMetadata = new StandardMethodMetadata(method);
+                    beanMethods.add(methodMetadata);
+
+                    // 处理@Bean注解的属性
+                    processBeanAnnotationAttributes(method, methodMetadata);
+                }
+            }
+
+            // 处理父类中的@Bean方法（递归）- 占时不处理
+            // processSuperclassBeanMethods(configClass, beanMethods);
+
+            // 处理接口默认方法中的@Bean方法（如果有的话）- 占时不处理
+            // processInterfaceDefaultMethods(configClass, beanMethods);
+
+        } catch (Exception e) {
+            log.error("检索@Bean方法元数据失败，类: {}", abd.getBeanClassName(), e);
+        }
+
+        log.debug("检索到 {} 个@Bean方法", beanMethods.size());
+        return beanMethods;
+    }
+
+    /**
+     * 处理@Bean注解的属性
+     */
+    private void processBeanAnnotationAttributes(Method method, MethodMetadata methodMetadata) {
+        Map<String, Object> beanAttributes = methodMetadata.getAnnotationAttributes(Bean.class.getName());
+        if (beanAttributes == null) {
+            return;
+        }
+
+        // 存储@Bean注解的属性
+        Map<String, Object> attributes = new HashMap<>();
+
+        // 处理value/name属性（Bean名称）
+        String[] beanNames = (String[]) beanAttributes.get("value");
+        if (beanNames.length == 0) {
+            beanNames = (String[]) beanAttributes.get("name");
+        }
+        if (beanNames.length > 0) {
+            attributes.put("beanNames", beanNames);
+            log.debug("@Bean方法 {} 指定了名称: {}", method.getName(), Arrays.toString(beanNames));
+        }
+
+        // 处理autowireCandidate属性
+        attributes.put("autowireCandidate", (boolean) beanAttributes.get("autowireCandidate"));
+
+        // 处理initMethod属性
+        attributes.put("initMethod", (String) beanAttributes.get("initMethod"));
+
+        // 处理destroyMethod属性
+        attributes.put("destroyMethod", (String) beanAttributes.get("destroyMethod"));
+
+        // 将属性设置到方法元数据中
+        // 这里需要MethodMetadata支持存储注解属性
+        // 我们可以在StandardMethodMetadata中添加相应的方法
+        if (methodMetadata instanceof StandardMethodMetadata smm) {
+            smm.setAnnotationAttributes(Bean.class.getName(), attributes);
+        }
     }
 }

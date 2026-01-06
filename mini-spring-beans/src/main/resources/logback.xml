@@ -7,12 +7,12 @@
         <!-- 定义日志输出格式 -->
         <encoder>
             <!-- 日志格式：时间 [线程] 日志级别 类名 - 日志消息 换行 -->
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- 根日志记录器：设置全局日志级别 DEBUG -->
-    <root level="INFO">
+    <!-- 根日志记录器：设置全局日志级别 INFO/DEBUG -->
+    <root level="DEBUG">
         <!-- 引用控制台Appender -->
         <appender-ref ref="CONSOLE" />
     </root>

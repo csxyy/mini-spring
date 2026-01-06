@@ -52,4 +52,34 @@ public interface BeanDefinition {
      */
     void setBeanClassName(String beanClassName);
 
+    /**
+     * 设置是否自动装配候选
+     */
+    void setAutowireCandidate(boolean autowireCandidate);
+
+    /**
+     * 是否自动装配候选
+     */
+    boolean isAutowireCandidate();
+
+    /**
+     * 设置初始化方法名
+     */
+    void setInitMethodName(String initMethodName);
+
+    /**
+     * 获取初始化方法名
+     */
+    String getInitMethodName();
+
+    /**
+     * 设置销毁方法名
+     */
+    void setDestroyMethodName(String destroyMethodName);
+
+    /**
+     * 获取销毁方法名
+     */
+    String getDestroyMethodName();
+
 }

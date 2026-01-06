@@ -70,21 +70,22 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader i
         postProcessBeanFactory(beanFactory);
 
         // 5. ⭐调用BeanFactory后置处理器（最核心：配置类解析在这里）
+        // 配置类解析: ConfigurationClassPostProcessor
         invokeBeanFactoryPostProcessors(beanFactory);
 
-        // 6. 注册Bean后置处理器（核心：准备Bean增强）
+        // 6. ⭐注册Bean后置处理器（核心：准备Bean增强）
 //        registerBeanPostProcessors(beanFactory);
 
-        // 7. 初始化消息源（可忽略）
+        // 7. 初始化消息源
 //        initMessageSource();
 
-        // 8. 初始化事件广播器（可忽略）
+        // 8. 初始化事件广播器
 //        initApplicationEventMulticaster();
 
         // 9. 模板方法，子类可以初始化特殊Bean（空实现，保持结构）
         onRefresh();
 
-        // 10. 注册监听器（可忽略）
+        // 10. 注册监听器
 //        registerListeners();
 
         // 11. ⭐完成BeanFactory初始化（核心：实例化所有单例Bean）

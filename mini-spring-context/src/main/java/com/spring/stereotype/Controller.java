@@ -15,4 +15,8 @@ import java.lang.annotation.*;
 @Documented
 @Component
 public @interface Controller {
+    /**
+     * 设置beanName：默认是类名小写
+     */
+    String value() default "";
 }

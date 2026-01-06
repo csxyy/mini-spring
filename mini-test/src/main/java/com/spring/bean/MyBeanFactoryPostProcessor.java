@@ -18,8 +18,5 @@ public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
         System.out.println("MyBeanFactoryPostProcessor#postProcessBeanFactory...");
-        BeanDefinition definition = beanFactory.getBeanDefinition("user");
-        // 在此处安全地进行修改
-        definition.setScope(BeanDefinition.SCOPE_PROTOTYPE);
     }
 }

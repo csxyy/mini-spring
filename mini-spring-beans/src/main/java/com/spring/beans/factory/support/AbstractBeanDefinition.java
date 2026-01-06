@@ -1,6 +1,7 @@
 package com.spring.beans.factory.support;
 
 import com.spring.beans.factory.config.BeanDefinition;
+import com.spring.util.ObjectUtils;
 
 /**
  * ClassName: AbstractBeanDefinition
@@ -11,10 +12,10 @@ import com.spring.beans.factory.config.BeanDefinition;
  * @version: v1.0
  */
 public abstract class AbstractBeanDefinition implements BeanDefinition {
+
     private volatile Class<?> beanClass;
 
     private String beanClassName;
-
 
     private String scope = SCOPE_SINGLETON;
 
@@ -24,12 +25,44 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
 
     private boolean primary = false;
 
-
     private String factoryBeanName; // 工厂Bean名称
     private String factoryMethodName;   // 工厂方法名称
 
-
     private Object source;  // 添加source属性
+
+    /**
+     * 自动装配模式常量 - 对应Spring的AbstractBeanDefinition
+     */
+    public static final int AUTOWIRE_NO = 0;
+    public static final int AUTOWIRE_BY_NAME = 1;
+    public static final int AUTOWIRE_BY_TYPE = 2;
+    public static final int AUTOWIRE_CONSTRUCTOR = 3;
+    public static final int AUTOWIRE_AUTODETECT = 4;
+
+    private int autowireMode = AUTOWIRE_NO; // 自动装配模式
+
+    private boolean autowireCandidate = true; // 是否自动装配候选（默认开启）
+
+    private String[] initMethodNames; // 初始化方法
+
+    private String[] destroyMethodNames; // 销毁方法
+
+
+    /**
+     * 设置BeanDefinition默认值
+     */
+    public void applyDefaults(BeanDefinitionDefaults defaults) {
+        Boolean lazyInit = defaults.getLazyInit();
+        if (lazyInit != null) {
+            setLazyInit(lazyInit);
+        }
+
+        // 下面这些配置在目前的注解驱动中都用不到可以不用管
+        //setAutowireMode(defaults.getAutowireMode());
+        //setDependencyCheck(defaults.getDependencyCheck());
+        //setInitMethodName(defaults.getInitMethodName());
+        //setDestroyMethodName(defaults.getDestroyMethodName());
+    }
 
     /**
      * 获取Bean类 - 延迟加载版本
@@ -215,5 +248,73 @@ public abstract class AbstractBeanDefinition implements BeanDefinition {
      */
     public void setSource(Object source) {
         this.source = source;
+    }
+
+    /**
+     * 复制BeanDefinitio
+     * @return
+     */
+    public abstract AbstractBeanDefinition cloneBeanDefinition();
+
+    /**
+     * 设置自动装配模式
+     */
+    public void setAutowireMode(int autowireMode) {
+        this.autowireMode = autowireMode;
+    }
+
+    /**
+     * 获取自动装配模式
+     */
+    public int getAutowireMode() {
+        return this.autowireMode;
+    }
+
+    /**
+     * 设置是否自动装配候选
+     */
+    @Override
+    public void setAutowireCandidate(boolean autowireCandidate) {
+        this.autowireCandidate = autowireCandidate;
+    }
+
+    /**
+     * 是否自动装配候选
+     */
+    @Override
+    public boolean isAutowireCandidate() {
+        return this.autowireCandidate;
+    }
+
+    /**
+     * 设置初始化方法名
+     */
+    @Override
+    public void setInitMethodName(String initMethodName) {
+        this.initMethodNames = (initMethodName != null ? new String[] {initMethodName} : null);
+    }
+
+    /**
+     * 获取初始化方法名
+     */
+    @Override
+    public String getInitMethodName() {
+        return (!ObjectUtils.isEmpty(this.initMethodNames) ? this.initMethodNames[0] : null);
+    }
+
+    /**
+     * 设置销毁方法名
+     */
+    @Override
+    public void setDestroyMethodName(String destroyMethodName) {
+        this.destroyMethodNames = (destroyMethodName != null ? new String[] {destroyMethodName} : null);
+    }
+
+    /**
+     * 获取销毁方法名
+     */
+    @Override
+    public String getDestroyMethodName() {
+        return (!ObjectUtils.isEmpty(this.destroyMethodNames) ? this.destroyMethodNames[0] : null);
     }
 }

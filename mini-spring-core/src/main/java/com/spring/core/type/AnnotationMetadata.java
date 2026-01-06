@@ -17,10 +17,6 @@ public interface AnnotationMetadata {
      */
     String getClassName();
 
-    /**
-     * 检查是否包含指定注解（只检查直接声明的注解）
-     */
-    boolean hasAnnotation(String annotationName);
 
     /**
      * 检查注解的继承链（包括元注解）
@@ -28,9 +24,22 @@ public interface AnnotationMetadata {
     boolean isAnnotated(String annotationName);
 
     /**
-     * 获取指定注解的属性
+     * 获取指定注解的属性值
+     * 对应Spring的getAnnotationAttributes方法
+     *
+     * @param annotationName 注解全限定名
+     * @return 注解属性映射，如果不存在返回null
      */
     Map<String, Object> getAnnotationAttributes(String annotationName);
+
+    /**
+     * 获取指定注解的属性值（包括默认值）
+     *
+     * @param annotationName 注解全限定名
+     * @param classValuesAsString 是否将Class值转换为字符串
+     * @return 注解属性映射
+     */
+    Map<String, Object> getAnnotationAttributes(String annotationName, boolean classValuesAsString);
 
     /**
      * 获取所有注解类型名称

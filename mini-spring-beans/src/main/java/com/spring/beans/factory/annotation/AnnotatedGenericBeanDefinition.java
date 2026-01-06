@@ -34,6 +34,16 @@ public class AnnotatedGenericBeanDefinition extends RootBeanDefinition implement
         setBeanClassName(metadataReader.getClassMetadata().getClassName());
     }
 
+    public AnnotatedGenericBeanDefinition(AnnotationMetadata metadata) {
+        if (metadata instanceof StandardAnnotationMetadata sam) {
+            setBeanClass(sam.getIntrospectedClass());
+        }
+        else {
+            setBeanClassName(metadata.getClassName());
+        }
+        this.annotationMetadata = metadata;
+    }
+
     /**
      * 获取注解元数据 - 如果需要类信息，延迟加载类
      */

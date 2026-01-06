@@ -14,4 +14,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Component {
+    /**
+     * 设置beanName：默认是类名小写
+     */
+    String value() default "";
 }

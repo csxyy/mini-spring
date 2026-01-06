@@ -2,6 +2,10 @@ package com.spring;
 
 import com.spring.config.MyConfig;
 import com.spring.context.annotation.AnnotationConfigApplicationContext;
+import com.spring.context.annotation.BeanAnnotationHelper;
+import com.spring.context.annotation.ConfigurationClassBeanDefinitionReader;
+
+import java.lang.reflect.Method;
 
 /**
  * ClassName: Test
@@ -12,23 +16,13 @@ import com.spring.context.annotation.AnnotationConfigApplicationContext;
  * @version: v1.0
  */
 public class MainTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchMethodException {
         AnnotationConfigApplicationContext ioc = new AnnotationConfigApplicationContext(MyConfig.class);
 
-        // @Component、@Controller、@Service、@Repository
-        System.out.println(ioc.getBean("userController"));
-        System.out.println(ioc.getBean("userService"));
-        System.out.println(ioc.getBean("userDao"));
 
-        // 懒加载 @Lazy
-        System.out.println(ioc.getBean("lazyUser"));
-
-        // 通过 @Scope("prototype") 实现多例Bean
-        System.out.println(ioc.getBean("prototypeUser"));
-        System.out.println(ioc.getBean("prototypeUser"));
-
-        // 通过 BeanFactoryPostProcessor 修改 BeanDefinition 实现多例Bean
-        System.out.println(ioc.getBean("user"));
-        System.out.println(ioc.getBean("user"));
+        System.out.println(ioc.getBean("userName1"));
+        System.out.println(ioc.getBean("userName1"));
+        System.out.println(ioc.getBean("userName2"));
+        System.out.println(ioc.getBean("userName2"));
     }
 }

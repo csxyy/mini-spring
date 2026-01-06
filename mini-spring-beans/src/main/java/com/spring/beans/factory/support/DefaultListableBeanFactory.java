@@ -76,7 +76,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
         // 6. 清除相关缓存（简化版）
         clearBeanDefinitionCache(beanName);
 
-        log.info("注册Bean定义: {} -> {}", beanName, beanDefinition.getBeanClass().getSimpleName());
+        log.info("注册Bean定义: {} -> {}", beanName, beanDefinition);
     }
 
     @Override

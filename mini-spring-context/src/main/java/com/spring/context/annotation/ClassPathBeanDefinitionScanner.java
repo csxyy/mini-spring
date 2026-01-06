@@ -4,11 +4,16 @@ import com.spring.beans.factory.annotation.AnnotatedBeanDefinition;
 import com.spring.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import com.spring.beans.factory.config.BeanDefinition;
 import com.spring.beans.factory.config.BeanDefinitionHolder;
+import com.spring.beans.factory.support.AbstractBeanDefinition;
+import com.spring.beans.factory.support.BeanDefinitionDefaults;
 import com.spring.beans.factory.support.BeanDefinitionRegistry;
 import com.spring.beans.factory.support.RootBeanDefinition;
 import com.spring.core.type.AnnotationMetadata;
 import com.spring.core.type.StandardAnnotationMetadata;
 import com.spring.stereotype.Component;
+import com.spring.stereotype.Controller;
+import com.spring.stereotype.Repository;
+import com.spring.stereotype.Service;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,6 +37,8 @@ import java.util.*;
 public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateComponentProvider {
 
     private final BeanDefinitionRegistry registry;
+
+    private BeanDefinitionDefaults beanDefinitionDefaults = new BeanDefinitionDefaults();
 
     public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry) {
         this(registry, true);
@@ -79,11 +86,13 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
                 // 第二步：生成beanName
                 // 注意：这里需要先加载类才能获取注解信息
                 // 简化实现：如果还没有类名，使用默认生成方式
-                String beanName = generateBeanName(beanClassName);
+                String beanName = generateBeanName(candidate);
                 log.debug("为类 {} 生成Bean名称: {}", beanClassName, beanName);
 
                 // 第三步：后置处理BeanDefinition（设置默认值）
-
+                if (candidate instanceof AbstractBeanDefinition abstractBeanDefinition) {
+                    postProcessBeanDefinition(abstractBeanDefinition, beanName);
+                }
 
                 // 第四步：处理通用注解（@Lazy、@Primary、@Description等）并赋值给BeanDefinition对应的属性
                 if (candidate instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
@@ -101,6 +110,15 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
         }
 
         log.debug("组件扫描完成");
+    }
+
+    /**
+     * 子类可以重写以添加自定义逻辑（扩展点）
+     * 普通用户可以不用管，一般这个扩展点是用来整合其它框架
+     */
+    protected void postProcessBeanDefinition(AbstractBeanDefinition beanDefinition, String beanName) {
+        // 默认实现：应用扫描器默认配置
+        beanDefinition.applyDefaults(this.beanDefinitionDefaults);
     }
 
     /**
@@ -144,17 +162,85 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
         return true;
     }
 
-
+    private int getBeanDefinitionCount() {
+        // 需要registry提供获取BeanDefinition数量的方法
+        return registry.getBeanDefinitionCount(); // 简化实现
+    }
 
     /**
-     * BeanName生成器，简化实现：类名首字母小写
+     * 生成Bean名称 - 重构版本，对应Spring的AnnotationBeanNameGenerator.generateBeanName方法
+     * 设计思想：
+     *  1. 优先使用@Component及其派生注解的value属性
+     *  2. 支持@Service、@Repository、@Controller等派生注解
+     *  3. 提供默认的命名策略（类名首字母小写）
      */
-    private String generateBeanName(String fullClassName) {
-        if (fullClassName == null || fullClassName.isEmpty()) {
-            throw new IllegalArgumentException("fullClassName不能为null");
+    private String generateBeanName(BeanDefinition beanDef) {
+        log.debug("开始生成Bean名称，类名: {}", beanDef.getBeanClassName());
+        // 1. 参数校验
+        if (beanDef == null) {
+            throw new IllegalArgumentException("BeanDefinition不能为null");
+        }
+        String beanClassName = beanDef.getBeanClassName();
+        if (beanClassName == null || beanClassName.isEmpty()) {
+            throw new IllegalArgumentException("Bean定义没有有效的类名");
         }
 
-        // 1. 提取类名
+        // 2. 尝试从@Component注解（及其派生注解）的value属性获取自定义名称
+        String customName = extractCustomBeanNameFromAnnotation(beanDef);
+        if (customName != null && !customName.isEmpty()) {
+            log.debug("使用注解指定的Bean名称: {}", customName);
+            return customName;
+        }
+
+        // 3. 使用默认命名策略：类名首字母小写
+        String defaultName = generateDefaultBeanName(beanClassName);
+        log.debug("使用默认Bean名称: {} -> {}", beanClassName, defaultName);
+        return defaultName;
+    }
+
+    /**
+     * 从注解中提取自定义的Bean名称
+     * 支持@Component、@Service、@Repository、@Controller等注解的value属性
+     */
+    private String extractCustomBeanNameFromAnnotation(BeanDefinition beanDef) {
+        // 只处理带有注解元数据的BeanDefinition
+        if (beanDef instanceof AnnotatedBeanDefinition abd) {
+            AnnotationMetadata metadata = abd.getMetadata();
+
+            // 定义支持的注解列表（按优先级排序）
+            String[] annotationTypes = {
+                    Component.class.getName(),
+                    Service.class.getName(),
+                    Repository.class.getName(),
+                    Controller.class.getName(),
+                    Configuration.class.getName()
+                    // 可以继续添加其他派生注解
+            };
+
+            // 检查每个注解是否包含value属性
+            for (String annotationType : annotationTypes) {
+                Map<String, Object> attributes = metadata.getAnnotationAttributes(annotationType);
+                if (attributes != null) {
+                    Object value = attributes.get("value");
+                    if (value instanceof String beanName) {
+                        if (!beanName.isEmpty()) {
+                            log.debug("从注解 {} 提取Bean名称: {}",
+                                    annotationType, beanName);
+                            return beanName;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 生成默认的Bean名称 - 对应Spring的ClassUtils.getShortNameAsProperty方法
+     * 规则：类名首字母小写，内部类使用点分隔
+     */
+    private String generateDefaultBeanName(String fullClassName) {
         int lastDotIndex = fullClassName.lastIndexOf('.');
         String className = lastDotIndex == -1 ?
                 fullClassName :
@@ -169,10 +255,4 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
         return Character.toLowerCase(className.charAt(0)) +
                 (className.length() > 1 ? className.substring(1) : "");
     }
-
-    private int getBeanDefinitionCount() {
-        // 需要registry提供获取BeanDefinition数量的方法
-        return registry.getBeanDefinitionCount(); // 简化实现
-    }
-
 }

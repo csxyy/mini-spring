@@ -15,4 +15,8 @@ import java.lang.annotation.*;
 @Documented
 @Component
 public @interface Repository {
+    /**
+     * 设置beanName：默认是类名小写
+     */
+    String value() default "";
 }

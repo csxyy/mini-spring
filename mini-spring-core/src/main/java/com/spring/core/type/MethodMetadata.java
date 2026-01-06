@@ -1,5 +1,6 @@
 package com.spring.core.type;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
@@ -16,6 +17,7 @@ public interface MethodMetadata {
      */
     String getMethodName();
 
+
     /**
      * 获取声明类名
      */
@@ -30,4 +32,14 @@ public interface MethodMetadata {
      * 获取方法上的注解属性
      */
     Map<String, Object> getAnnotationAttributes(String annotationName);
+
+    String getReturnTypeName();
+
+    boolean isAbstract();
+
+    boolean isStatic();
+
+    boolean isFinal();
+
+    Map<String, Object> getAnnotationAttributes(String annotationName, boolean classValuesAsString);
 }

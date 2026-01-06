@@ -1,5 +1,6 @@
 package com.spring.core.type;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
@@ -22,6 +23,7 @@ import java.util.*;
  * @version: v1.0
  */
 @Slf4j
+@Data
 public class StandardAnnotationMetadata implements AnnotationMetadata{
 
     /** 被扫描的类对象 */
@@ -99,15 +101,9 @@ public class StandardAnnotationMetadata implements AnnotationMetadata{
     }
 
     @Override
-    public boolean hasAnnotation(String annotationName) {
-        // 直接从缓存中查找，O(1)时间复杂度
-        return annotationAttributes.containsKey(annotationName);
-    }
-
-    @Override
     public boolean isAnnotated(String annotationName) {
-        // 首先检查直接注解
-        if (hasAnnotation(annotationName)) {
+        // 首先检查直接注解，直接从缓存中查找，O(1)时间复杂度
+        if (annotationAttributes.containsKey(annotationName)) {
             return true;
         }
 
@@ -161,6 +157,126 @@ public class StandardAnnotationMetadata implements AnnotationMetadata{
         return false;
     }
 
+    @Override
+    public Map<String, Object> getAnnotationAttributes(String annotationName) {
+        return getAnnotationAttributes(annotationName, false);
+    }
+
+    @Override
+    public Map<String, Object> getAnnotationAttributes(String annotationName, boolean classValuesAsString) {
+        log.debug("获取注解属性: {}，类: {}", annotationName, introspectedClass.getName());
+
+        // 检查直接注解
+        if (annotationAttributes.containsKey(annotationName)) {
+            Map<String, Object> attributes = annotationAttributes.get(annotationName);
+            log.debug("找到直接注解属性: {}", attributes);
+            return processAttributes(attributes, classValuesAsString);
+        }
+
+        // 检查元注解（递归）
+        Map<String, Object> metaAttributes = getMetaAnnotationAttributes(annotationName, classValuesAsString);
+        if (metaAttributes != null) {
+            log.debug("找到元注解属性: {}", metaAttributes);
+            return metaAttributes;
+        }
+
+        log.debug("未找到注解: {}", annotationName);
+        return null;
+    }
+
+    /**
+     * 获取元注解的属性值
+     */
+    private Map<String, Object> getMetaAnnotationAttributes(String targetAnnotationName, boolean classValuesAsString) {
+        Set<Class<? extends Annotation>> visited = new HashSet<>();
+
+        for (String directAnnotationName : annotationAttributes.keySet()) {
+            try {
+                Class<?> annotationClass = Class.forName(directAnnotationName);
+                if (annotationClass.isAnnotation()) {
+                    @SuppressWarnings("unchecked")
+                    Class<? extends Annotation> annotationType = (Class<? extends Annotation>) annotationClass;
+
+                    Map<String, Object> metaAttrs = findMetaAnnotationAttributes(
+                            annotationType, targetAnnotationName, visited, classValuesAsString);
+                    if (metaAttrs != null) {
+                        return metaAttrs;
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                log.debug("无法加载注解类: {}", directAnnotationName);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 递归查找元注解属性
+     */
+    private Map<String, Object> findMetaAnnotationAttributes(
+            Class<? extends Annotation> annotationType,
+            String targetAnnotationName,
+            Set<Class<? extends Annotation>> visited,
+            boolean classValuesAsString) {
+
+        // 避免循环依赖
+        if (visited.contains(annotationType)) {
+            return null;
+        }
+        visited.add(annotationType);
+
+        // 获取当前注解的元注解
+        Annotation[] metaAnnotations = annotationType.getDeclaredAnnotations();
+        for (Annotation metaAnnotation : metaAnnotations) {
+            Class<? extends Annotation> metaAnnotationType = metaAnnotation.annotationType();
+            String metaAnnotationName = metaAnnotationType.getName();
+
+            // 如果是目标注解
+            if (metaAnnotationName.equals(targetAnnotationName)) {
+                Map<String, Object> attributes = extractAnnotationAttributes(metaAnnotation);
+                return processAttributes(attributes, classValuesAsString);
+            }
+
+            // 递归查找
+            Map<String, Object> nestedAttrs = findMetaAnnotationAttributes(
+                    metaAnnotationType, targetAnnotationName, visited, classValuesAsString);
+            if (nestedAttrs != null) {
+                return nestedAttrs;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 处理属性值（如将Class转换为字符串）
+     */
+    private Map<String, Object> processAttributes(Map<String, Object> attributes, boolean classValuesAsString) {
+        if (!classValuesAsString || attributes == null) {
+            return attributes;
+        }
+
+        Map<String, Object> processed = new HashMap<>();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Class) {
+                processed.put(entry.getKey(), ((Class<?>) value).getName());
+            } else if (value instanceof Class[]) {
+                Class<?>[] classes = (Class<?>[]) value;
+                String[] classNames = new String[classes.length];
+                for (int i = 0; i < classes.length; i++) {
+                    classNames[i] = classes[i].getName();
+                }
+                processed.put(entry.getKey(), classNames);
+            } else {
+                processed.put(entry.getKey(), value);
+            }
+        }
+
+        return processed;
+    }
+
     /**
      * 判断是否为Java语言内置的注解
      * 这些注解不会包含业务逻辑的元注解关系，可以跳过以避免不必要的递归
@@ -169,12 +285,6 @@ public class StandardAnnotationMetadata implements AnnotationMetadata{
         String packageName = annotationType.getPackage().getName();
         return packageName.startsWith("java.lang.annotation") ||
                 packageName.startsWith("java.lang");
-    }
-
-    @Override
-    public Map<String, Object> getAnnotationAttributes(String annotationName) {
-        // 返回不可修改的副本，防止外部修改内部缓存
-        return annotationAttributes.getOrDefault(annotationName, Collections.emptyMap());
     }
 
     @Override
